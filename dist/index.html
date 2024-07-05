@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Fat Lines - Conditional Edges + thresholdAngle</title>
+    <meta charset="UTF-8">
+  <link rel="stylesheet" href="/src.f10117fe.css"></head>
+
+  <body>
+    <div id="timeofday">timeofday</div>
+    <div id="app"></div>
+
+    <script id="stripes-vertexShader" type="x-shader/x-vertex">
+      #define GLSLIFY 1
+      // Common varyings
+      varying vec3 v_position;
+      varying vec3 v_normal;
+
+      /*
+       * The main program
+       */
+      void main() {
+          // Save the varyings
+          v_position = position;
+          v_normal = normalize(normalMatrix * normal);
+
+          // Vertex shader output
+          gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+      }
+    </script>
+
+    <script id="stripes-fragmentShader" type="x-shader/x-vertex">
+      #define GLSLIFY 1
+      // Common uniforms
+      uniform vec2 u_resolution;
+      uniform vec2 u_mouse;
+      uniform float u_time;
+      uniform float u_frame;
+
+      // Common varyings
+      varying vec3 v_position;
+      varying vec3 v_normal;
+
+      /*
+       *  Calculates the diffuse factor produced by the light illumination
+       */
+      float diffuseFactor(vec3 normal, vec3 light_direction) {
+          float df = dot(normalize(normal), normalize(light_direction));
+
+          if (gl_FrontFacing) {
+              df = -df;
+          }
+
+          return max(0.0, df);
+      }
+
+      /*
+       * The main program
+       */
+      void main() {
+          // Use the mouse position to define the light direction
+          float min_resolution = min(u_resolution.x, u_resolution.y);
+          vec3 light_direction = -vec3((u_mouse - 0.5 * u_resolution) / min_resolution, 0.5);
+
+          // Calculate the light diffusion factor
+          float df = diffuseFactor(v_normal, light_direction);
+
+          // Calculate the surface color
+          float surface_color = df;
+
+          // Don't paint the pixels between the stripes
+          if (cos(0.1 * v_position.y + 0.2 * u_time) < 0.0) {
+              discard;
+          }
+
+          // Fragment shader output
+          gl_FragColor = vec4(vec3(surface_color), 1.0);
+      }
+    </script>
+
+    <script id="pencil-vertexShader" type="x-shader/x-vertex">
+      #define GLSLIFY 1
+      // Common varyings
+      varying vec3 v_position;
+      varying vec3 v_normal;
+
+      /*
+      * The main program
+      */
+      void main() {
+          // Save the varyings
+          v_position = position;
+          v_normal = normalize(normalMatrix * normal);
+
+          // Vertex shader output
+          gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+      }
+    </script>
+
+    <script id="pencil-fragmentShader" type="x-shader/x-vertex">
+      #define GLSLIFY 1
+      // Common uniforms
+      uniform vec2 u_resolution;
+      uniform vec2 u_mouse;
+      uniform float u_time;
+      uniform float u_frame;
+
+      // Common varyings
+      varying vec3 v_position;
+      varying vec3 v_normal;
+
+      /*
+      * Returns a rotation matrix for the given angle
+      */
+      mat2 rotate(float angle) {
+          return mat2(cos(angle), -sin(angle), sin(angle), cos(angle));
+      }
+
+      /*
+      *  Calculates the diffuse factor produced by the light illumination
+      */
+      float diffuseFactor(vec3 normal, vec3 light_direction) {
+          float df = dot(normalize(normal), normalize(light_direction));
+
+          if (gl_FrontFacing) {
+              df = -df;
+          }
+
+          return max(0.0, df);
+      }
+
+      /*
+      * Returns a value between 1 and 0 that indicates if the pixel is inside the horizontal line
+      */
+      float horizontalLine(vec2 pixel, float y_pos, float width) {
+          return 1.0 - smoothstep(-1.0, 1.0, abs(pixel.y - y_pos) - 0.5 * width);
+      }
+
+      /*
+      * The main program
+      */
+      void main() {
+          // Use the mouse position to define the light direction
+          float min_resolution = min(u_resolution.x, u_resolution.y);
+          vec3 light_direction = -vec3((u_mouse - 0.5 * u_resolution) / min_resolution, 0.5);
+
+          // Calculate the light diffusion factor
+          float df = diffuseFactor(v_normal, light_direction);
+
+          // Move the pixel coordinates origin to the center of the screen
+          vec2 pos = gl_FragCoord.xy - 0.5 * u_resolution;
+
+          // Rotate the coordinates 20 degrees
+          pos = rotate(radians(20.0)) * pos;
+
+          // Define the first group of pencil lines
+          float line_width = 7.0 * (1.0 - smoothstep(0.0, 0.3, df)) + 0.5;
+          float lines_sep = 16.0;
+          vec2 grid_pos = vec2(pos.x, mod(pos.y, lines_sep));
+          float line_1 = horizontalLine(grid_pos, lines_sep / 2.0, line_width);
+          grid_pos.y = mod(pos.y + lines_sep / 2.0, lines_sep);
+          float line_2 = horizontalLine(grid_pos, lines_sep / 2.0, line_width);
+
+          // Rotate the coordinates 50 degrees
+          pos = rotate(radians(-50.0)) * pos;
+
+          // Define the second group of pencil lines
+          lines_sep = 12.0;
+          grid_pos = vec2(pos.x, mod(pos.y, lines_sep));
+          float line_3 = horizontalLine(grid_pos, lines_sep / 2.0, line_width);
+          grid_pos.y = mod(pos.y + lines_sep / 2.0, lines_sep);
+          float line_4 = horizontalLine(grid_pos, lines_sep / 2.0, line_width);
+
+          // Calculate the surface color
+          float surface_color = 1.0;
+          surface_color -= 0.8 * line_1 * (1.0 - smoothstep(0.5, 0.75, df));
+          surface_color -= 0.8 * line_2 * (1.0 - smoothstep(0.4, 0.5, df));
+          surface_color -= 0.8 * line_3 * (1.0 - smoothstep(0.4, 0.65, df));
+          surface_color -= 0.8 * line_4 * (1.0 - smoothstep(0.2, 0.4, df));
+          surface_color = clamp(surface_color, 0.05, 1.0);
+
+          // Fragment shader output
+          gl_FragColor = vec4(vec3(surface_color), 1.0);
+      }
+    </script>
+
+    <script id="fish-vertexShader" type="x-shader/x-vertex">
+      varying vec3 vNormal;
+      void main()
+      {
+           vNormal = normalize(normalMatrix * normal);
+           gl_Position = projectionMatrix * modelViewMatrix * vec4( position, 1.0 );
+      }
+    </script>
+
+    <!-- fragment shader a.k.a. pixel shader -->
+    <script id="fish-fragmentShader" type="x-shader/x-vertex">
+      uniform vec3 light;
+      varying vec3 vNormal;
+      uniform vec3 color;
+      void main()
+      {
+          float diffuse = dot(normalize(light), vNormal);
+          if (diffuse > 0.8) {
+          diffuse = 1.0;
+      }
+      else if (diffuse > 0.5) {
+          diffuse = 0.6;
+      }
+      else if (diffuse > 0.2) {
+          diffuse = 0.4;
+      }
+      else {
+          diffuse = 0.2;
+      }
+          gl_FragColor = vec4( color* diffuse, 1.0);
+      }
+    </script>
+
+    <script id="js-vertex-shader" type="x-shader/x-vertex">
+      attribute vec3 position;
+      attribute vec3 normal;
+      uniform mat4 modelViewMatrix;
+      uniform mat4 projectionMatrix;
+      uniform mat4 normalMatrix;
+      uniform float u_inflate;
+      uniform bool u_isEdge;
+      varying vec3 vNormal;
+
+      void main() {
+       vNormal =(normalMatrix * vec4(normal, 0.0)).xyz;
+       //頂点座標に法線方向に u_inflate 加算させる。
+       vec3 p = position;
+       if(u_isEdge == true){
+        p += normal * u_inflate;
+       }
+       gl_Position = projectionMatrix * modelViewMatrix * vec4( p, 1.0 );
+      }
+    </script>
+
+    <!-- fragmentShader -->
+    <script id="js-fragment-shader" type="x-shader/x-fragment">
+      precision mediump float;
+
+      uniform vec3 u_lightDirection;
+      uniform vec3 u_globalColor;
+      uniform float u_gradient;
+      uniform bool u_isEdge;
+      varying vec3 vNormal;
+
+      void main() {
+          vec3 light = normalize(u_lightDirection);
+          vec3 normal = normalize(vNormal);
+
+          if(u_isEdge == true){
+           vec3 rgb = vec3(0.0);
+           gl_FragColor = vec4(rgb, 1.0);
+          }
+
+          if(u_isEdge == false){
+              //法線の向きとベクトルの内積の結果から拡散光の計算する
+              //単位化された内積の結果は、-1.0 ~ 1.0になるので、
+              //(-1.0 ~ 1.0) * 0.5 + 0.5 == (0.0 ~ 1.0) の範囲に代わる
+              float luminance = dot(light, normal) * 0.5 + 0.5;
+
+              //情報の解像度を落とす
+              // floor(0.4 * 3.0) / 3.0 = 0.333
+              // floor(0.5 * 3.0) / 3.0 = 0.333
+              // floor(0.6 * 3.0) / 3.0 = 0.333
+              // floor(0.7 * 3.0) / 3.0 = 0.666
+              // 一定の範囲内では計算結果が同じになり、つまり解像度が落ちた状態になる
+              luminance = floor(luminance * u_gradient) / u_gradient;
+              vec3 rgb = vec3(u_globalColor * luminance);
+              gl_FragColor = vec4(rgb, 1.0);
+          }
+      }
+    </script>
+
+    <script src="/src.f10117fe.js"></script>
+  </body>
+</html>

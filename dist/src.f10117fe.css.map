@@ -1,0 +1,1 @@
+{"version":3,"sources":["src/styles.css"],"names":[],"mappings":"AAAA;AACA;AACA;AACA;AACA;AACA;AACA;AACA;AACA;AACA;AACA;AACA","file":"src.f10117fe.css","sourceRoot":"..","sourcesContent":["body {\r\n  overflow: hidden;\r\n  margin: 0;\r\n}\r\n\r\n#timeofday {\r\n  position: absolute;\r\n  color: #ffffff;\r\n  padding: 20px;\r\n  right: 0;\r\n}\r\n"]}

@@ -1,0 +1,14 @@
+body {
+  overflow: hidden;
+  margin: 0;
+}
+
+#timeofday {
+  position: absolute;
+  color: #ffffff;
+  padding: 20px;
+  right: 0;
+}
+
+
+/*# sourceMappingURL=/src.f10117fe.css.map */

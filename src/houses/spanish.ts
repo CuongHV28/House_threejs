@@ -463,12 +463,13 @@ const newFloor = {
     {
       holes: [
         smallWindow({ offsetLeft: 1 }),
-        smallWindowCuong({ offsetLeft: 2, bottom: 0.6, width: 2, height: 1 }),
+        smallWindowCuong({ offsetLeft: 1, bottom: 0.6, width: 2, height: 1 }),
       ],
     },
     {
       holes: [
         smallWindow({ offsetLeft: 1 }),
+        smallWindowCuong({ offsetLeft: 3, bottom: 0.3, width: 1, height: 1 }),
         // smallWindowCuong({ offsetLeft: 3 }),
       ],
     },
@@ -478,5 +479,36 @@ const newFloor = {
 
 // Step 4: Add the new floor to the house
 house.floors.push(newFloor);
+
+const newFloor2 = {
+  height: 3, // Example height
+  floor: true, // This indicates it's an actual floor and not just a structural element
+  materials: {
+    floor: floorMaterial, // Assuming you want to use the same floor material as the other floors
+  },
+  sides: [
+    {
+      // Assuming this side of the floor will have the window
+      holes: [
+        normalWindow({ offsetLeft: 1 }), // Step 3: Add a window with an offset of 1 from the left
+
+      ],
+    },
+    {
+      holes: [
+        smallWindowCuong({ offsetLeft: 1, bottom: 0.6, width: 2, height: 1 }),
+      ],
+    },
+    {
+      holes: [
+        smallWindow({ offsetLeft: 1 }),
+        smallWindowCuong({ offsetLeft: 3, bottom: 0.3, width: 1, height: 1 }),
+        // smallWindowCuong({ offsetLeft: 3 }),
+      ],
+    },
+    {}, // Other sides of the floor without holes
+  ],
+};
+house.floors.push(newFloor2);
 
 export default house;
